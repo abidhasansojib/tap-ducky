@@ -41,6 +41,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Build USB IDs Database
+        run: python3 tools/build_usbids_db.py
+
       - name: Build APK
         run: flutter build apk --release
 
