@@ -152,6 +152,7 @@ object Configfs {
       fi
 
       echo "Bound to UDC: ${'$'}BOUND_UDC"
+      chmod 666 /dev/hidg* 2>/dev/null || true
     """.trimIndent()
 
     return listOf(create, functions, link, bind).joinToString("\n\n") + "\n"

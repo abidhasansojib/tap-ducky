@@ -26,8 +26,8 @@ class RootShell(private val log: LogBus) {
     )
 
     // Writer FD numbers inside the persistent root shell:
-    // - FD 3: keyboard (/dev/hidg0)
-    // - FD 4: mouse    (/dev/hidg1)
+    // - FD 3: keyboard (/dev/hidg1)
+    // - FD 4: mouse    (/dev/hidg2)
     private val HID_FD_KBD = 3
     private val HID_FD_MOUSE = 4
 
@@ -67,7 +67,7 @@ class RootShell(private val log: LogBus) {
 
     /**
      * Execute commands *directly in the persistent session shell* (no `sh -c`).
-     * Use this ONLY when you need side-effects to persist in the session (e.g. `exec 3> /dev/hidg0`).
+     * Use this ONLY when you need side-effects to persist in the session (e.g. `exec 3> /dev/hidg1`).
      */
     fun execDirect(commands: String, timeoutSec: Long = 10): ExecResult {
         val first = commands.trim().lineSequence().firstOrNull()?.take(160) ?: "(empty)"
@@ -131,7 +131,6 @@ class RootShell(private val log: LogBus) {
                 sleep 0.05
                 i=$${'$'}((i+1))
               done
-              exec $HID_FD_KBD> "$${'$'}K"
             fi
 
             if [ -n "$${'$'}M" ]; then
@@ -140,6 +139,15 @@ class RootShell(private val log: LogBus) {
                 sleep 0.05
                 i=$${'$'}((i+1))
               done
+            fi
+
+            chmod 666 /dev/hidg* 2>/dev/null || true
+
+            if [ -n "$${'$'}K" ]; then
+              exec $HID_FD_KBD> "$${'$'}K"
+            fi
+
+            if [ -n "$${'$'}M" ]; then
               exec $HID_FD_MOUSE> "$${'$'}M"
             fi
 

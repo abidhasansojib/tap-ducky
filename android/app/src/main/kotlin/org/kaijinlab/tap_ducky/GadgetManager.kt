@@ -386,13 +386,13 @@ class GadgetManager(
 
     val kbdDev = when (profile.roleType.lowercase(Locale.US)) {
       "mouse" -> null
-      "keyboard" -> "/dev/hidg0"
-      else -> "/dev/hidg0"
+      "keyboard" -> "/dev/hidg1"
+      else -> "/dev/hidg1"
     }
     val mouseDev = when (profile.roleType.lowercase(Locale.US)) {
-      "mouse" -> "/dev/hidg0"
+      "mouse" -> "/dev/hidg1"
       "keyboard" -> null
-      else -> "/dev/hidg1"
+      else -> "/dev/hidg2"
     }
 
     prefs.setActive(profile.id, profile.roleType, gadgetDir, kbdDev, mouseDev)
@@ -713,6 +713,7 @@ class GadgetManager(
 
   private fun openHidWritersBestEffort(kbdDev: String?, mouseDev: String?) {
     try {
+      root.exec("chmod 666 /dev/hidg* 2>/dev/null || true", timeoutSec = 3)
       val rr = root.openHidWriters(kbdDev, mouseDev, timeoutSec = 6)
       if (rr.ok) {
         log.log(
