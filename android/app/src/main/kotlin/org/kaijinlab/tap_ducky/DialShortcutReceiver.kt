@@ -32,8 +32,7 @@ class DialShortcutReceiver : BroadcastReceiver() {
         context.startService(svcIntent)
       }
     } catch (e: Throwable) {
-      val log = FileLogger(context)
-      log.logError("dial", "Failed to start foreground service from broadcast: ${e.message}")
+      android.util.Log.e("DialShortcutReceiver", "Failed to start foreground service from broadcast: ${e.message}", e)
     }
   }
 
