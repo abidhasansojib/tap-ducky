@@ -453,12 +453,24 @@ class ExecutionController extends Notifier<ExecutionState> {
       if (type == 'error') {
         final msg = (evt['message']?.toString() ?? '').trim();
         final m = msg.isNotEmpty ? msg : 'Execution error';
-        state = state.copyWith(status: m);
+        final finishedAt = DateTime.now();
+        state = state.copyWith(
+          isRunning: false,
+          progress: 1.0,
+          status: m,
+          finishedAt: finishedAt,
+          success: false,
+          stopRequested: false,
+          panicAvailable: false,
+        );
+        _activeExecutionId = null;
+        _progressTimer?.cancel();
+        _progressTimer = null;
         _pushTail(_mkTail(executionId: executionId, level: 'error', message: m, success: false));
         if (enableLogging) {
           await _emitAndPersist(LogEntry(
             id: '$executionId-error-event',
-            timestamp: DateTime.now(),
+            timestamp: finishedAt,
             level: 'error',
             message: m,
             success: false,
@@ -777,7 +789,19 @@ class ExecutionController extends Notifier<ExecutionState> {
       if (type == 'error') {
         final msg = (evt['message']?.toString() ?? '').trim();
         final m = msg.isNotEmpty ? msg : 'Execution error';
-        state = state.copyWith(status: m);
+        final finishedAt = DateTime.now();
+        state = state.copyWith(
+          isRunning: false,
+          progress: 1.0,
+          status: m,
+          finishedAt: finishedAt,
+          success: false,
+          stopRequested: false,
+          panicAvailable: false,
+        );
+        _activeExecutionId = null;
+        _progressTimer?.cancel();
+        _progressTimer = null;
         _pushTail(_mkTail(
           executionId: executionId,
           level: 'error',
@@ -789,7 +813,7 @@ class ExecutionController extends Notifier<ExecutionState> {
         if (enableLogging) {
           await _emitAndPersist(LogEntry(
             id: '$executionId-error-event',
-            timestamp: DateTime.now(),
+            timestamp: finishedAt,
             level: 'error',
             message: m,
             success: false,

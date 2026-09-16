@@ -154,6 +154,16 @@ class PayloadsStoreController extends Notifier<StoreState> {
     await refresh();
   }
 
+  Future<void> toggleShowAll() async {
+    _showAll = !_showAll;
+    state = state.copyWith(showAll: _showAll);
+    try {
+      final prefs = await ref.read(prefsStorageProvider.future);
+      await prefs.setString(_showAllKey, _showAll ? '1' : '0');
+    } catch (_) {}
+    await refresh();
+  }
+
   Future<void> _load() async {
     try {
       final refRepo = state.repo!;
@@ -174,6 +184,7 @@ class PayloadsStoreController extends Notifier<StoreState> {
         showMedia: state.showMedia,
         onlyImportable: state.onlyImportable,
         hideUnsupported: state.hideUnsupported,
+        showAll: _showAll,
       );
     }
   }
@@ -185,13 +196,14 @@ class PayloadsStoreController extends Notifier<StoreState> {
       final sm = prefs.getString(_showMediaKey);
       final oi = prefs.getString(_onlyImportableKey);
       final hu = prefs.getString(_hideUnsupportedKey);
+      final sa = prefs.getString(_showAllKey);
+      _showAll = sa == '1';
       state = state.copyWith(
         showMedia: sm == '1',
         onlyImportable: oi == '1',
         hideUnsupported: hu == '1',
+        showAll: _showAll,
       );
-      final sa = prefs.getString(_showAllKey);
-      _showAll = sa == '1';
     } catch (_) {}
 
     try {

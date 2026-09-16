@@ -25,10 +25,15 @@ class DialShortcutReceiver : BroadcastReceiver() {
       putExtra(GadgetForegroundService.EXTRA_TITLE, "Dial shortcut running")
     }
 
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      context.startForegroundService(svcIntent)
-    } else {
-      context.startService(svcIntent)
+    try {
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        context.startForegroundService(svcIntent)
+      } else {
+        context.startService(svcIntent)
+      }
+    } catch (e: Throwable) {
+      val log = FileLogger(context)
+      log.logError("dial", "Failed to start foreground service from broadcast: ${e.message}")
     }
   }
 

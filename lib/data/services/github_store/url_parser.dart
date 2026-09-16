@@ -3,13 +3,20 @@ import 'models.dart';
 RepoRef? parseGitHubUrl(String url) {
   final trimmed = url.trim();
   if (trimmed.isEmpty) return null;
-  final uri = Uri.tryParse(trimmed);
+  var target = trimmed;
+  if (!target.startsWith('http://') && !target.startsWith('https://')) {
+    target = 'https://github.com/$target';
+  }
+  final uri = Uri.tryParse(target);
   if (uri == null) return null;
   if ((uri.host.toLowerCase()) != 'github.com') return null;
   final segs = uri.path.split('/').where((s) => s.isNotEmpty).toList();
   if (segs.length < 2) return null;
   final owner = segs[0];
-  final repo = segs[1];
+  var repo = segs[1];
+  if (repo.endsWith('.git')) {
+    repo = repo.substring(0, repo.length - 4);
+  }
   // Leave branch empty when not explicitly provided to use repository default branch.
   var branch = '';
   var path = '';

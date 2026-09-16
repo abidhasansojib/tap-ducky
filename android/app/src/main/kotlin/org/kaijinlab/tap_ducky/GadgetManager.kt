@@ -384,16 +384,8 @@ class GadgetManager(
       return
     }
 
-    val kbdDev = when (profile.roleType.lowercase(Locale.US)) {
-      "mouse" -> null
-      "keyboard" -> "/dev/hidg1"
-      else -> "/dev/hidg1"
-    }
-    val mouseDev = when (profile.roleType.lowercase(Locale.US)) {
-      "mouse" -> "/dev/hidg1"
-      "keyboard" -> null
-      else -> "/dev/hidg2"
-    }
+    val (kbdDev, mouseDev) = resolveHidDevices(profile.roleType)
+    log.log("gadget", "Resolved HID devices: kbd=$kbdDev mouse=$mouseDev (role=${profile.roleType})")
 
     prefs.setActive(profile.id, profile.roleType, gadgetDir, kbdDev, mouseDev)
     hostConfigurationRequestCount = 0
@@ -481,6 +473,36 @@ class GadgetManager(
     )
     writeMouseReport(path, report)
     log.log("test", "Mouse report to $path dx=$dx dy=$dy wheel=$wheel buttons=$buttons")
+  }
+
+  fun sendMouseReport(buttons: Int, dx: Int, dy: Int, wheel: Int) {
+    val current = statusRef.get()
+    if (current.state != "ACTIVE") throw IllegalStateException("Gadget is not active")
+    val path = prefs.activeMouseDev ?: throw IllegalStateException("Mouse HID device not available")
+    val report = byteArrayOf(
+      (buttons and 0xFF).toByte(),
+      (dx.coerceIn(-127, 127) and 0xFF).toByte(),
+      (dy.coerceIn(-127, 127) and 0xFF).toByte(),
+      (wheel.coerceIn(-127, 127) and 0xFF).toByte(),
+    )
+    writeMouseReport(path, report)
+  }
+
+  fun sendMouseMove(dx: Int, dy: Int) {
+    sendMouseReport(0, dx, dy, 0)
+  }
+
+  fun sendMouseScroll(wheel: Int) {
+    sendMouseReport(0, 0, 0, wheel)
+  }
+
+  fun sendMouseButtons(buttons: Int) {
+    sendMouseReport(buttons, 0, 0, 0)
+  }
+
+  fun sendMediaKey(code: String): Boolean {
+    log.log("hid", "Media key requested: $code")
+    return false
   }
 
   fun testKeyboardKey(keyLabel: String) {
@@ -708,7 +730,54 @@ class GadgetManager(
     if (s.contains("powered")) return true
     if (s.contains("suspended")) return true
     if (s.contains("active")) return true
+    if (s == "unknown" || s.contains("unknown")) return true
     return false
+  }
+
+  private fun resolveHidDevices(roleType: String): Pair<String?, String?> {
+    val role = roleType.lowercase(Locale.US)
+    var available = emptyList<String>()
+    for (i in 0 until 10) {
+      val r = root.exec("ls -1d /dev/hidg* 2>/dev/null", timeoutSec = 2)
+      if (r.ok && r.stdout.isNotBlank()) {
+        available = r.stdout.lines()
+          .map { it.trim() }
+          .filter { it.startsWith("/dev/hidg") }
+          .sortedWith(Comparator { a, b ->
+            val numA = a.substringAfter("/dev/hidg").toIntOrNull() ?: 0
+            val numB = b.substringAfter("/dev/hidg").toIntOrNull() ?: 0
+            numA.compareTo(numB)
+          })
+        if (available.isNotEmpty()) break
+      }
+      try {
+        Thread.sleep(100)
+      } catch (_: InterruptedException) {
+        break
+      }
+    }
+
+    log.log("gadget", "Available HID devices: $available (role=$role)")
+
+    return when (role) {
+      "mouse" -> {
+        val dev = available.lastOrNull() ?: "/dev/hidg0"
+        Pair(null, dev)
+      }
+      "keyboard" -> {
+        val dev = available.lastOrNull() ?: "/dev/hidg0"
+        Pair(dev, null)
+      }
+      else -> {
+        if (available.size >= 2) {
+          Pair(available[available.size - 2], available[available.size - 1])
+        } else if (available.size == 1) {
+          Pair(available[0], null)
+        } else {
+          Pair("/dev/hidg0", "/dev/hidg1")
+        }
+      }
+    }
   }
 
   private fun openHidWritersBestEffort(kbdDev: String?, mouseDev: String?) {
@@ -1151,14 +1220,16 @@ class GadgetManager(
     val openLocal = if (useDirect) "" else "exec $HID_KBD_FD> \"${'$'}P\""
     val closeLocal = if (useDirect) "" else "(exec $HID_KBD_FD>&-) 2>/dev/null || true"
     val script = """
-      set -e
-      P=${shQuote(path)}
-      $usleepSnippet
-      $openLocal
+      (
+        set -e
+        P=${shQuote(path)}
+        $usleepSnippet
+        $openLocal
 
-      $writes
+        $writes
 
-      $closeLocal
+        $closeLocal
+      )
     """.trimIndent()
 
     var attempt = 0

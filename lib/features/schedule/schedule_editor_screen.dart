@@ -30,6 +30,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   String? _payloadId;
   DateTime? _runAt;
   final Map<String, TextEditingController> _paramCtrls = {};
+  String? _lastSyncedPayloadId;
   bool _loaded = false;
 
   @override
@@ -344,6 +345,18 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   void _syncParamControllers(Payload payload) {
+    if (_lastSyncedPayloadId != payload.id) {
+      _lastSyncedPayloadId = payload.id;
+      for (final c in _paramCtrls.values) {
+        c.dispose();
+      }
+      _paramCtrls.clear();
+      for (final p in payload.parameters) {
+        _paramCtrls[p.key] = TextEditingController(text: p.defaultValue);
+      }
+      return;
+    }
+
     final keys = payload.parameters.map((e) => e.key).toSet();
     final toRemove = _paramCtrls.keys.where((k) => !keys.contains(k)).toList();
     for (final k in toRemove) {

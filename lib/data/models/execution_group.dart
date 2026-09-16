@@ -57,11 +57,11 @@ class ExecutionGroup {
       final payloadName = first.payloadName ?? 'Unknown';
 
       final startTime = first.meta?['startedAt'] != null
-          ? DateTime.parse(first.meta!['startedAt'] as String)
+          ? (DateTime.tryParse(first.meta!['startedAt'].toString()) ?? first.timestamp)
           : first.timestamp;
 
       final endTime = last.meta?['finishedAt'] != null
-          ? DateTime.parse(last.meta!['finishedAt'] as String)
+          ? (DateTime.tryParse(last.meta!['finishedAt'].toString()) ?? last.timestamp)
           : last.timestamp;
 
       final hasErrors = events.any((e) => !e.success || e.level == 'error');

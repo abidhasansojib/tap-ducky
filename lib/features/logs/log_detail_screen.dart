@@ -23,7 +23,7 @@ class LogDetailScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Share',
             onPressed: () async {
-              final e = async.value?.firstWhere((x) => x.id == logId, orElse: () => null as dynamic);
+              final e = _byId(async.value ?? const [], logId);
               if (e == null) return;
               final text = const JsonEncoder.withIndent('  ').convert(e.toJson());
               await Share.share(text, subject: 'TapDucky log entry');

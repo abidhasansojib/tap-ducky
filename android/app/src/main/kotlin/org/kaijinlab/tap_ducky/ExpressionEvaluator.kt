@@ -123,8 +123,8 @@ class ExpressionEvaluator {
 
     fun parse(): Int = parseOr()
 
-    private fun peek(): Tok = tokens[pos]
-    private fun consume(): Tok = tokens[pos++]
+    private fun peek(): Tok = if (pos < tokens.size) tokens[pos] else tokens.last()
+    private fun consume(): Tok = if (pos < tokens.size) tokens[pos++] else tokens.last()
 
     private fun matchOp(op: String): Boolean {
       val t = peek()
@@ -297,7 +297,9 @@ class ExpressionEvaluator {
         return inside
       }
 
-      consume()
+      if (peek().kind != Kind.END) {
+        consume()
+      }
       return 0
     }
 

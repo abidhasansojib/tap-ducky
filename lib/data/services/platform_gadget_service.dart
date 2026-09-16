@@ -384,11 +384,6 @@ class PlatformGadgetService {
     await _methods.invokeMethod<void>('cancelExecution', {
       'executionId': primary,
     });
-    if (primary != '*') {
-      await _methods.invokeMethod<void>('cancelExecution', {
-        'executionId': '*',
-      });
-    }
   }
 
   Future<void> executeDuckyScript({

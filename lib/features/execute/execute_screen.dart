@@ -26,6 +26,7 @@ class ExecuteScreen extends ConsumerStatefulWidget {
 class _ExecuteScreenState extends ConsumerState<ExecuteScreen> with SingleTickerProviderStateMixin {
   final _rawCtrl = TextEditingController();
   final Map<String, TextEditingController> _paramCtrls = {};
+  String? _lastSyncedPayloadId;
   late TabController _tabController;
   final _validator = DuckyScriptValidator();
 
@@ -151,7 +152,11 @@ class _ExecuteScreenState extends ConsumerState<ExecuteScreen> with SingleTicker
 
           final selected = _resolveSelected(payloads, selectedId);
           if (selected == null) {
-            ref.read(selectedPayloadIdProvider.notifier).state = payloads.first.id;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ref.read(selectedPayloadIdProvider.notifier).state = payloads.first.id;
+              }
+            });
           } else {
             _syncParamControllers(selected);
           }
@@ -227,6 +232,18 @@ class _ExecuteScreenState extends ConsumerState<ExecuteScreen> with SingleTicker
   }
 
   void _syncParamControllers(Payload payload) {
+    if (_lastSyncedPayloadId != payload.id) {
+      _lastSyncedPayloadId = payload.id;
+      for (final c in _paramCtrls.values) {
+        c.dispose();
+      }
+      _paramCtrls.clear();
+      for (final p in payload.parameters) {
+        _paramCtrls[p.key] = TextEditingController(text: p.defaultValue);
+      }
+      return;
+    }
+
     final keys = payload.parameters.map((e) => e.key).toSet();
     final toRemove = _paramCtrls.keys.where((k) => !keys.contains(k)).toList();
     for (final k in toRemove) {

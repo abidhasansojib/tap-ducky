@@ -23,12 +23,10 @@ class PrefsStorage {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) {
-        _prefs.remove(key);
         return [];
       }
       return decoded.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
     } catch (_) {
-      _prefs.remove(key);
       return [];
     }
   }
@@ -43,12 +41,10 @@ class PrefsStorage {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) {
-        _prefs.remove(key);
         return null;
       }
       return decoded.cast<String, dynamic>();
     } catch (_) {
-      _prefs.remove(key);
       return null;
     }
   }

@@ -67,18 +67,9 @@ class _PayloadsStoreScreenState extends ConsumerState<PayloadsStoreScreen> {
             ),
           ),
          IconButton(
-           tooltip: 'Show all (including hidden)',
-           icon: const Icon(Icons.visibility),
-           onPressed: repo == null
-               ? null
-               : () async {
-                   // toggle persisted flag via controller (notifier-level) using prefs
-                   final prefs = await ref.read(prefsStorageProvider.future);
-                   final current = (prefs.getString('tapducky.store.showAll') ?? '') == '1';
-                   await prefs.setString('tapducky.store.showAll', current ? '0' : '1');
-                   // force reload
-                   ctrl.refresh();
-                 },
+           tooltip: state.showAll ? 'Hide extra files' : 'Show all (including hidden)',
+           icon: Icon(state.showAll ? Icons.visibility_off : Icons.visibility),
+           onPressed: repo == null ? null : () => ctrl.toggleShowAll(),
          ),
          IconButton(
            tooltip: state.showMedia ? 'Hide media' : 'Show media',
