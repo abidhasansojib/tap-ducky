@@ -464,8 +464,12 @@ class ExecutionController extends Notifier<ExecutionState> {
           panicAvailable: false,
         );
         _activeExecutionId = null;
-        _progressTimer?.cancel();
-        _progressTimer = null;
+        _timeoutTimer?.cancel();
+        _timeoutTimer = null;
+        _panicTimer?.cancel();
+        _panicTimer = null;
+        _autoPanicTimer?.cancel();
+        _autoPanicTimer = null;
         _pushTail(_mkTail(executionId: executionId, level: 'error', message: m, success: false));
         if (enableLogging) {
           await _emitAndPersist(LogEntry(
@@ -800,8 +804,12 @@ class ExecutionController extends Notifier<ExecutionState> {
           panicAvailable: false,
         );
         _activeExecutionId = null;
-        _progressTimer?.cancel();
-        _progressTimer = null;
+        _timeoutTimer?.cancel();
+        _timeoutTimer = null;
+        _panicTimer?.cancel();
+        _panicTimer = null;
+        _autoPanicTimer?.cancel();
+        _autoPanicTimer = null;
         _pushTail(_mkTail(
           executionId: executionId,
           level: 'error',
